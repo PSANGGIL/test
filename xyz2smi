@@ -9,7 +9,6 @@ def xyz2smi(path, save):
 
 
     listdir = glob.glob(path + '/*.xyz')
-    \
     smi_f = []
     file_name = []
     error = []
