@@ -1,0 +1,37 @@
+from rdkit import Chem
+import pandas as pd
+import numpy as np
+import os
+from openbabel import openbabel
+
+def xyz2smi(path, save)
+
+    path = ('./xyz_psg')
+    listdir = os.listdir(path)
+
+    smi_f = []
+    file_name = []
+    error = []
+    sub_listdir = listdir
+    for directory in sub_listdir:
+        with open(path + '/' + directory) as f:
+            conv=openbabel.OBConversion()
+            conv.SetInAndOutFormats("xyz","smi")
+            mol = openbabel.OBMol()
+            conv.ReadFile(mol, path + '/' + directory)
+            a = conv.WriteString(mol)
+            smi_f.append((a).split('\t')[0])
+            file_name.append(a.replace('/', '.' ).split('.')[-2])
+
+    df = pd.DataFrame({'File_name':file_name, 'SMILES':smi_f})
+    df = df.sort_values(by=['File_name'])
+    print(df)
+
+    df.to_csv(save,index=False)
+
+if __name__ == "__main__":
+
+    path = './xyz_psg'
+    save = './smi_pubchemqc2.csv'
+
+    xyz2smi(path, save)
