@@ -1,0 +1,42 @@
+from rdkit import Chem
+import pandas as pd
+import numpy as np
+import os
+import re
+#import openbabel
+from openbabel import openbabel
+
+#create_xyz('000000001', '000025000')
+#create_xyz('000025001', '000050000')
+#create_xyz('005625001', '005650000')
+#create_xyz('027575001', '027600000')
+#create_xyz('044675001', '044700000')
+#create_xyz('044850001', '044875000')
+
+listdir = os.listdir('../Compound_000000001_000025000')
+print(listdir[0])
+listdir.remove('000000807')
+smi_f = []
+file_name = []
+error = []
+for directory in listdir:
+    with open('../Compound_000000001_000025000/' + directory +  '/' + directory +'.B3LYP@PM6.S0.inp') as f:
+        lines = f.readlines()
+        for i in range(len(lines)):
+            if lines[i].startswith('C1') == True:
+                s_i = i
+            elif lines[i].startswith(' $END') == True:
+                e_i = i
+        num_atoms = int(e_i - s_i-1)
+
+        #geom =  list( map(lambda s: [ re.split( "\s+", s)[0], ( float(re.split( "\s+", s)[2].replace('*^','e')),float(re.split( "\s+", s)[3].replace('*^','e')),float(re.split( "\s+", s)[4].replace('*^','e')) ) ], lines[s_i + 1:e_i] ) )
+
+        geom2 =  list( map(lambda s: [ re.split( "\s+", s)[0] + ' ' + str(re.split( "\s+", s)[2].replace('*^','e')) + ' '+ str(re.split( "\s+", s)[3].replace('*^','e')) + ' ' +  str(re.split( "\s+", s)[4].replace('*^','e'))  ], lines[s_i + 1:e_i] ) )
+    print(directory)
+    with open(directory + '.xyz', 'w+') as file:
+        file.write(str(num_atoms) + "\n" + "\n")
+        for num, i in enumerate(geom2):
+            if num+1 < len(geom2):
+                file.write(', '.join(i) + "\n")
+            else:
+                file.write(', '.join(i))
