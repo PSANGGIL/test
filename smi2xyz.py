@@ -5,9 +5,9 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import re
+import pickle
 def Mol_split(split_distance, d_smi):
     split_smi = [s for s in d_smi.split('.')]
-    print(split_smi)
     for idx, smiles in enumerate(split_smi):
         mol = Chem.MolFromSmiles(smiles)
         num_conformers = 10  # Specify the number of conformers to generate
@@ -36,6 +36,7 @@ def Mol_split(split_distance, d_smi):
             lowest_energy_coordinates = np.vstack([lowest_energy_coordinates, (conf.GetPositions())])
 
     return np.array(atom_symbols), lowest_energy_coordinates
+
 def Map_idx(smi, dummy_atom):
     smi_ = H2DUMMY(smi, dummy_atom)
     qmol    = Chem.MolFromSmiles(smi_)
@@ -55,7 +56,7 @@ def DUMMY2H(arr, dummy_atom):
     return arr
 
 def Smi2xyz(split_distance, max_i, i, save_path, smi, dummy_atom, agent, save_xyzfile = False):
-    #save_xyzfile = True
+    save_xyzfile = True
     mol_fragment = smi.split('.')
     fragments = []
     for f in range(len(mol_fragment)):
@@ -75,9 +76,11 @@ def Smi2xyz(split_distance, max_i, i, save_path, smi, dummy_atom, agent, save_xy
         pass
 
     return atom_symbols, coordinates, fragments
+
 def DB(save_path, data, d_atom, rt, split_distance):
     reaction_data  = Raw_Data(split_distance, save_path, data, d_atom, rt)
-    np.save(save_path + rt + '_data2.npy', reaction_data)
+    with open(rt + '_data.pickle','wb') as fw:
+        pickle.dump(reaction_data, fw)
 
 
 def Raw_Data(split_distance, save_path, data, d_atom, rt):
@@ -87,21 +90,30 @@ def Raw_Data(split_distance, save_path, data, d_atom, rt):
     smiles   = data[rt]
     num_atoms, charges, fragments, positions, rxn, single_fragment = [], [], [], [], [], []
     for i, smiles_ in enumerate(tqdm(smiles)):
-        data_ = (Smi2xyz(split_distance, len(smiles), i, save_path, smiles_, d_atom, rt))
-        rxn.append(reaction.iloc[i])
-        num_atoms.append(len(data_[0]))
-        charges.append([atom_dict[i] for i in data_[0]])
-        fragments.append(data_[2])
-        positions.append(data_[1])
-        if len(fragments) ==1:
-            sf = 1
-        else:
-            sf = 0
-        single_fragment.append(sf)
+        try:
+            if smiles_ == smiles.iloc[i]:
+                data_ = (Smi2xyz(split_distance, len(smiles), i, save_path, smiles_, d_atom, rt))
+                rxn.append(reaction.iloc[i])
+                num_atoms.append(len(data_[0]))
+                charges.append([atom_dict[i] for i in data_[0]])
+                fragments.append(data_[2])
+                positions.append(data_[1])
+                if len(fragments) ==1:
+                    sf = 1
+                else:
+                    sf = 0
+                single_fragment.append(sf)
+
+            else:
+                break
+#            if len(data_[2]) >= 4:
+#                print(smiles.iloc[i])
+#                print(reaction.iloc[i])
+        except:
+            error.append(i)
     #np.save(rt + '.npy', np.array(error))
     #return  {'num_atoms':num_atoms, 'charges':charges, 'fragments':fragments, 'positions':positions, 'rxn':rxn, 'single_fragment':single_fragment}
     return  {'num_atoms':num_atoms, 'charges':charges, 'fragments':fragments, 'positions':positions, 'rxn':rxn}
-
 
 if __name__ == "__main__":
     save_path = './test/'
